@@ -1,0 +1,20 @@
+salesforce:
+ username: "![6G+lWTJSn/FR18P8DEX+vsQGPwz4O2cqlQdFPJvPwGNRGIyRA43BusJwreoAGTZR]"
+ password: "![fQrjowPakZHekUK9xaW3fA==]"
+ securitytoken: "![2eUE0RMzI7bSMUkNUe6I9j3NUXcBkOc+YVhXDd6TTGY=]"
+
+
+ 
+https:
+ port: "8082"
+ 
+api:
+ id: "19725855"
+ 
+enableConsole: "true"
+
+tls:
+ password: "![GtWPXnfCuh8Coxj4kZvHfg==]"
+ keypassword: "![GtWPXnfCuh8Coxj4kZvHfg==]"
+ 
+key: "password12345678"

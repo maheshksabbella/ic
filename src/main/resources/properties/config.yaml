@@ -1,0 +1,20 @@
+salesforce:
+ username: "maheshkmarreddysabbella-lnh7@force.com"
+ password: "Mahesh@6675"
+ securitytoken: "3WXuboPZiDOL4r6d0dFwmXYy"
+
+
+ 
+https:
+ port: "8082"
+ 
+api:
+ id: "19054012"
+ 
+enableConsole: "true"
+
+tls:
+ password: "![GtWPXnfCuh8Coxj4kZvHfg==]"
+ keypassword: "![GtWPXnfCuh8Coxj4kZvHfg==]"
+ 
+key: "password12345678"

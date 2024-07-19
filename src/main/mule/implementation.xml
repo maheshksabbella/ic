@@ -1,0 +1,201 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mule xmlns:salesforce="http://www.mulesoft.org/schema/mule/salesforce" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:apikit="http://www.mulesoft.org/schema/mule/mule-apikit" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd http://www.mulesoft.org/schema/mule/mule-apikit http://www.mulesoft.org/schema/mule/mule-apikit/current/mule-apikit.xsd http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd 
+http://www.mulesoft.org/schema/mule/salesforce http://www.mulesoft.org/schema/mule/salesforce/current/mule-salesforce.xsd">
+    <flow name="updateaccount" doc:id="afee0837-34c1-4068-9161-bd4fd7e0317e">
+        <logger level="INFO" doc:name="Update AccountBy Id Started" doc:id="d3b23805-3b29-4d4b-8e3f-4ecaaeefd761" message="#[flow.name] Flow Started"/>
+		<ee:transform doc:name="Mapping To Salesforce Fields">
+            <ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+[{
+	"Id": attributes.uriParams.id,
+   ( "Name":payload.name) if(not isEmpty(payload.name)),
+
+("Phone": payload.phone) if(not isEmpty(payload.phone)),
+("BillingCity" : payload.billing_city) if(not isEmpty(payload.billing_city)),
+("BillingCountry": payload.billiling_country) if(not isEmpty(payload.billing_country)),
+("BillingState": payload.billing_state) if(not isEmpty(payload.billing_state)),
+("BillingStreet": payload.billing_street) if(not isEmpty(payload.billing_street)),
+("ShippingState": payload.shipping_state) if(not isEmpty(payload.shipping_state)),
+("ShippingCountry": payload.shipping_country) if(not isEmpty(payload.shipping_country)),
+
+}]]]></ee:set-payload>
+			</ee:message>
+			<ee:variables>
+				<ee:set-variable variableName="id" ><![CDATA[attributes.uriParams.id]]></ee:set-variable>
+            </ee:variables>
+        </ee:transform>
+		<salesforce:update type="Account" doc:name="To Modify Existing AccountBy Id" doc:id="28bc1cd9-ac52-4412-a72b-023027fe29a7" config-ref="Salesforce_Config"/>
+		<ee:transform doc:name="Put Filtered Payload" doc:id="3b5c6eb1-71d7-45ce-b3ef-12d7aa7dea99">
+			<ee:message>
+				<ee:set-payload resource="dwlScripts/putFilter.dwl" />
+			</ee:message>
+		</ee:transform>
+		<logger level="INFO" doc:name="Update AccountBy Id Ended" doc:id="33ab4d24-551f-4178-9672-c1f78a4b704f" message="#[flow.name] Flow Ended"/>
+		<error-handler >
+			<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="abda8bee-b136-437b-9e94-290fa15aed6f" type="ANY" >
+				<ee:transform doc:name="Transform Message" doc:id="6a7ca127-3e23-4eb6-8294-b21076d05219" >
+					<ee:message />
+					<ee:variables >
+						<ee:set-variable variableName="vErrorMapping" ><![CDATA[%dw 2.0
+output application/java
+---
+{
+	"httpStatus": if ( not isEmpty(error.errorMessage.attributes.statusCode) ) (error.errorMessage.attributes.statusCode) else (attributes.statusCode default 500),
+	"errorCode": "SALESFORCE_ERROR",
+	"errorDescription": (error.errorMessage.'payload'.errorMessage) default error.description
+}]]></ee:set-variable>
+					</ee:variables>
+				</ee:transform>
+				<flow-ref doc:name="Flow Reference" doc:id="f9748fbe-dffc-457f-aff3-bcc9baabe291" name="sf-common-error-response" />
+			</on-error-propagate>
+		</error-handler>
+    </flow>
+	<flow name="delaccount" doc:id="a5ed2b40-b6cf-4bce-bdfb-98638b89812f">
+        <logger level="INFO" doc:name="Delete AccountBy Id Started" doc:id="7611324d-a6db-48ba-8137-979c3fad0ea9" message="#[flow.name] Flow Started"/>
+        <salesforce:delete doc:name="To Delete The AccountBy Id" doc:id="82bfbc7c-7aae-4438-ae34-e592981f9883" config-ref="Salesforce_Config">
+			<salesforce:ids ><![CDATA[#[[attributes.uriParams.id]]]]></salesforce:ids>
+		</salesforce:delete>
+		<ee:transform doc:name="Delete Filtered Payload" doc:id="c55ab4a9-8cc3-4ccb-bc8f-594a4e5748f6">
+			<ee:message>
+				<ee:set-payload resource="dwlScripts/deleteFilter.dwl" />
+			</ee:message>
+		</ee:transform>
+		<logger level="INFO" doc:name="Delete AccountBy Id Ended" doc:id="a590ca18-75e5-43af-b8c5-b8bd6d60fdf4" message="#[flow.name] Flow Ended"/>
+		<error-handler >
+			<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="619bd474-f360-4290-944f-18725443fdae" type="ANY" >
+				<ee:transform doc:name="Transform Message" doc:id="b8168541-73ef-4e98-be6c-25910b242535" >
+					<ee:message />
+					<ee:variables >
+						<ee:set-variable variableName="vErrorMapping" ><![CDATA[%dw 2.0
+output application/java
+---
+{
+	"httpStatus": if ( not isEmpty(error.errorMessage.attributes.statusCode) ) (error.errorMessage.attributes.statusCode) else (attributes.statusCode default 500),
+	"errorCode": "SALESFORCE_ERROR",
+	"errorDescription": (error.errorMessage.'payload'.errorMessage) default error.description
+}]]></ee:set-variable>
+					</ee:variables>
+				</ee:transform>
+				<flow-ref doc:name="Flow Reference" doc:id="59879577-8b99-4910-a900-364b680f996a" name="sf-common-error-response" />
+			</on-error-propagate>
+		</error-handler>
+    </flow>
+    <flow name="getaccounts" doc:id="8191ae67-5dd2-4c74-be42-8f88bb2c4f51">
+        <logger level="INFO" doc:name="Get AccountBy Id Started" doc:id="0a4304a8-a676-4662-9f9a-6f045d88c45c" message="#[flow.name] Flow Started"/>
+		<salesforce:query-all doc:name="To Retrive All Account" doc:id="9ea1e434-2864-4284-ad57-fd8a0f9ab4e6" config-ref="Salesforce_Config">
+			<salesforce:salesforce-query ><![CDATA[SELECT BillingCity,BillingCountry,BillingState,BillingStreet,Id,Name,Phone,ShippingCountry,ShippingState FROM Account]]></salesforce:salesforce-query>
+		</salesforce:query-all>
+		<ee:transform doc:name="Get Filtered Payload" doc:id="5ad6e430-a5ee-4228-bd9a-a190fdab5517">
+			<ee:message>
+				<ee:set-payload resource="dwlScripts/getFilter.dwl" />
+			</ee:message>
+		</ee:transform>
+		<logger level="INFO" doc:name="Get AccouintBy Id Ended" doc:id="9b9284be-61c1-42f0-b5c4-af3ad41e7cb6" message="#[flow.name] Flow Ended"/>
+		<error-handler >
+			<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="37ef70e7-3a70-4753-a094-f576fb512d67" type="ANY" >
+				<ee:transform doc:name="Transform Message" doc:id="fef02d11-cbff-4943-9564-89d015a9e048" >
+					<ee:message />
+					<ee:variables >
+						<ee:set-variable variableName="vErrorMapping" ><![CDATA[%dw 2.0
+output application/java
+---
+{
+	"httpStatus": if ( not isEmpty(error.errorMessage.attributes.statusCode) ) (error.errorMessage.attributes.statusCode) else (attributes.statusCode default 500),
+	"errorCode": "SALESFORCE_ERROR",
+	"errorDescription": (error.errorMessage.'payload'.errorMessage) default error.description
+}]]></ee:set-variable>
+					</ee:variables>
+				</ee:transform>
+				<flow-ref doc:name="Flow Reference" doc:id="88b15e17-b0c3-4668-a42c-5a5934747a1f" name="sf-common-error-response" />
+			</on-error-propagate>
+		</error-handler>
+    </flow>
+    <flow name="getaccount" doc:id="eb92862b-459d-4571-a541-0d2b6aacf3e2">
+        <logger level="INFO" doc:name="Get AccountFlow Started" doc:id="5488bf9a-9918-43fa-80d0-0e7f79681ba9" message="#[flow.name] Flow Started"/>
+        <salesforce:query doc:name="To Retrive AccountBy Id" doc:id="414c091f-71d3-42ec-b3b6-a50ea087a36d" config-ref="Salesforce_Config">
+			<salesforce:salesforce-query ><![CDATA[SELECT BillingCity,BillingCountry,BillingState,BillingStreet,Id,Name,Phone,ShippingCountry,ShippingState FROM Account where Id=':id']]></salesforce:salesforce-query>
+			<salesforce:parameters ><![CDATA[#[{
+	'id': attributes.uriParams.id
+}]]]></salesforce:parameters>
+		</salesforce:query>
+		<ee:transform doc:name="Get Filtered Payload By Id" doc:id="edf270e4-4d49-4919-a8ea-0ebbaaab99dc">
+			<ee:message>
+				<ee:set-payload resource="dwlScripts/getFilterById.dwl" />
+			</ee:message>
+		</ee:transform>
+		<logger level="INFO" doc:name="Get AccountFlow Ended" doc:id="794865a2-e18f-4f4f-84d6-33a3975a3e89" message="#[flow.name] Flow Ended"/>
+		<error-handler >
+			<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="b89408fd-fcb8-4733-bc69-50407b71a40c" type="ANY" >
+				<ee:transform doc:name="Transform Message" doc:id="a780eaaf-74b2-4e1d-8643-e94fefdcdb9f" >
+					<ee:message />
+					<ee:variables >
+						<ee:set-variable variableName="vErrorMapping" ><![CDATA[%dw 2.0
+output application/java
+---
+{
+	"httpStatus": if ( not isEmpty(error.errorMessage.attributes.statusCode) ) (error.errorMessage.attributes.statusCode) else (attributes.statusCode default 500),
+	"errorCode": "SALESFORCE_ERROR",
+	"errorDescription": (error.errorMessage.'payload'.errorMessage) default error.description
+}]]></ee:set-variable>
+					</ee:variables>
+				</ee:transform>
+				<flow-ref doc:name="Flow Reference" doc:id="26161677-ea36-462d-a7f1-c485a7e14add" name="sf-common-error-response" />
+			</on-error-propagate>
+		</error-handler>
+    </flow>
+    <flow name="createaccount" doc:id="dcb6fde6-9ee2-46e2-9ccd-777bbfdb46cb">
+        <logger level="INFO" doc:name="Create AccountFlow Started" doc:id="363a13ec-8945-447b-928f-b1a0a26f7930" message="#[flow.name] Flow Started"/>
+		<ee:transform doc:name="Object To Array  Conversion" doc:id="89f24d70-29fc-4282-93ac-d7b8f532d094">
+			<ee:message>
+				<ee:set-payload resource="dwlScripts/coerceObjectToMap.dwl" />
+			</ee:message>
+		</ee:transform>
+		<ee:transform doc:name="Mapping To Salesforce Fields" doc:id="79e4fd1c-f88a-4d71-abc6-5d8102d5809a" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+[{
+	"Id": attributes.uriParams.id,
+   ( "Name":payload.name) if(not isEmpty(payload.name)),
+
+("Phone": payload.phone) if(not isEmpty(payload.phone)),
+("BillingCity" : payload.billing_city) if(not isEmpty(payload.billing_city)),
+("BillingCountry": payload.billiling_country) if(not isEmpty(payload.billing_country)),
+("BillingState": payload.billing_state) if(not isEmpty(payload.billing_state)),
+("BillingStreet": payload.billing_street) if(not isEmpty(payload.billing_street)),
+("ShippingState": payload.shipping_state) if(not isEmpty(payload.shipping_state)),
+("ShippingCountry": payload.shipping_country) if(not isEmpty(payload.shipping_country)),
+
+}]]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<salesforce:create type="Account" doc:name="To Create AccountObjectr" doc:id="4a9dc679-3914-4adb-9aac-7f8458a52072" config-ref="Salesforce_Config"/>
+		<ee:transform doc:name="Post Filtered Payload" doc:id="1faed024-df67-430e-8abb-2e25fe6a540b">
+			<ee:message>
+				<ee:set-payload resource="dwlScripts/putFilter.dwl" />
+			</ee:message>
+		</ee:transform>
+		<logger level="INFO" doc:name="Create AccountFlow Ended" doc:id="87d91a25-3eec-4d16-b198-a791feb44364" message="#[flow.name] Flow Ended"/>
+		<error-handler >
+			<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="87f3cb8b-06b2-4761-a212-8b1009a1e55c" type="ANY" >
+				<ee:transform doc:name="Transform Message" doc:id="6e03ebf9-57d9-4f5c-b924-361807933d30" >
+					<ee:message />
+					<ee:variables >
+						<ee:set-variable variableName="vErrorMapping" ><![CDATA[%dw 2.0
+output application/java
+---
+{
+	"httpStatus": if ( not isEmpty(error.errorMessage.attributes.statusCode) ) (error.errorMessage.attributes.statusCode) else (attributes.statusCode default 500),
+	"errorCode": "SALESFORCE_ERROR",
+	"errorDescription": (error.errorMessage.'payload'.errorMessage) default error.description
+}]]></ee:set-variable>
+					</ee:variables>
+				</ee:transform>
+				<flow-ref doc:name="Flow Reference" doc:id="ff0eaf9b-da15-4db7-9d6f-397e92c0c68e" name="sf-common-error-response" />
+			</on-error-propagate>
+		</error-handler>
+    </flow>
+</mule>
